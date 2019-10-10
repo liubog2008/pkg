@@ -1,0 +1,23 @@
+name: unit-test
+on:
+- pull_request
+jobs:
+  test:
+    name: unit test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        version:
+        - "1.12"
+        - "1.13"
+    container:
+      image: golang:${{ matrix.version }}
+      env:
+        GO111MODULE: on
+    steps:
+    - name: checkout
+      uses: actions/checkout@v1
+    - name: unit test
+      run: |
+        go test -v ./...
+
