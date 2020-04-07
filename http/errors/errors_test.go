@@ -138,9 +138,7 @@ func TestNew(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		err := c.factory.New(c.args...)
-		e, ok := err.(*Error)
-		assert.True(t, ok, c.description)
+		e := c.factory.New(c.args...)
 		assert.Equal(t, c.code, e.Code, c.description, ": code should be equal")
 		assert.Equal(t, c.reason, e.Reason, c.description, ": reason should be equal")
 		assert.Equal(t, c.msg, e.Message, c.description, ": message should be equal")

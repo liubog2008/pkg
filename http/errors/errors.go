@@ -3,6 +3,7 @@ package errors
 import (
 	"errors"
 	"fmt"
+	"net/http"
 	"strings"
 )
 
@@ -15,7 +16,7 @@ type Error struct {
 	// Message defines long description of this error
 	Message string `json:"message"`
 	// Data defines some necessary data which is needed by frontend
-	Data map[string]interface{} `json:"data"`
+	Data map[string]interface{} `json:"data,omitempty"`
 }
 
 // Error implements error interface
@@ -26,7 +27,7 @@ func (e *Error) Error() string {
 // Factory defines error factory, it produce a set of errors with same type
 type Factory interface {
 	// New returns an error with data
-	New(args ...interface{}) error
+	New(args ...interface{}) *Error
 }
 
 type factory struct {
@@ -57,17 +58,33 @@ func NewFactory(code int, reason string, format string) (Factory, error) {
 	if err := f.template.fromRaw(format); err != nil {
 		return nil, err
 	}
+
 	return f, nil
 }
 
 // New returns a formatted error
-func (f *factory) New(args ...interface{}) error {
+func (f *factory) New(args ...interface{}) *Error {
 	data := convert(f.template.varNames, args)
 	return &Error{
 		Code:    f.code,
 		Reason:  f.reason,
 		Message: f.template.render(args),
 		Data:    data,
+	}
+}
+
+// Assert asserts system error as http error type
+// If not, convert it as internal server error
+func Assert(err error) *Error {
+	switch e := err.(type) {
+	case *Error:
+		return e
+	default:
+		return &Error{
+			Code:    http.StatusInternalServerError,
+			Reason:  "InternalServerError",
+			Message: err.Error(),
+		}
 	}
 }
 
